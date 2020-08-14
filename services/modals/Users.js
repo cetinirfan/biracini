@@ -25,6 +25,10 @@ const Users = new Schema({
         type:String,
         default:2
     },
+    oneSignal:{ 
+        type:String,
+        default:'a'
+    },
     mail:{
         type:String
     },
@@ -35,6 +39,7 @@ const Users = new Schema({
     userSmsCode:{
         type:String,
     },
+    promotionCode:[],
     userFortunes:[{type: mongoose.Types.ObjectId, ref: 'Fortune'}],
     userCreated:{
         type:Date,

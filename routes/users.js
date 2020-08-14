@@ -3,13 +3,46 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Users = require('../services/modals/Users');
+const Promotion = require('../services/modals/Promotion');
 const verifyToken = require('../services/middleware/verify-token');
 const smsSend = require('../services/modals/Sms');
 const randomInt = require('random-int');
 const gnp = require('generate-password');
 
+router.post('/saveUserToken/',verifyToken,(req,res)=>{
+  const {oneSignalToken} =req.body;
+  Users.updateOne({_id:req.user_id},{$set:{oneSignal:oneSignalToken}})
+  .then(data=>{     
+     res.json({status:true,message:'başarılı'});
+  })
+  .catch(err=>{
+      res.json(err);
+  })
+})
+
+router.post('/refreshUserToken/',verifyToken,(req,res)=>{
+  const {oneSignalToken} =req.body;
+  Users.findByIdAndUpdate({_id:req.user_id},{$set:{oneSignal:oneSignalToken}})
+  .then(data=>{      
+     res.json({status:true,message:'başarılı'});
+  })
+  .catch(err=>{
+      res.json(err);
+  })
+}) 
+
 router.post('/register',(req,res,next)=>{
-	const {fullName,password,telephone,gender,job,birthday} = req.body;
+  const {fullName,password,telephone,gender,job,birthday} = req.body;
+  if(!fullName || !password || !telephone || !gender || !job || !birthday ){
+    res.json({
+      status: false,
+      message: 'Lütfen Tüm alanları doldurunuz.'});
+  }
+  else if(telephone.length!=10){
+    res.json({
+      status: false,
+      message: 'Lütfen telefonun numaranızı kontrol ediniz. Başında sıfır olmadan 10 hane olarak giriniz.'});
+  }
 	Users.findOne({telephone:telephone},(err,data)=>{
 		if(data){
 			res.json({
@@ -31,7 +64,7 @@ router.post('/register',(req,res,next)=>{
 				promise.then((data)=>{
           /* smsSend('Sn '+req.body.fullName+' BiraCini uygulamasına hoşgeldiniz!! Doğrulama kodunuz: '+verification_code,req.body.telephone); */
 					res.json({
-            status: false,
+            status: true,
             message: 'Kullanıcı başarıyla oluşturuldu.'
           });
 				}).catch((err)=>{
@@ -93,7 +126,7 @@ router.post('/code', (req, res) => {
         .then(data =>{
           res.json({
             status: true,
-            message: 'Doğrulama kodu başarılı.'
+            message: 'Kayıt işleminiz başarı ile gerçekleşmiştir.'
           });
         })
         .catch(err=>{
@@ -241,14 +274,13 @@ router.post('/changePassword',verifyToken, (req, res) => {
 });
 
 router.post('/setProfile',verifyToken,(req,res)=>{
-	const {fullName,telephone,job,gender,birthday,mail} =req.body;
+	const {fullName,telephone,job,gender,birthday} =req.body;
 	Users.findByIdAndUpdate({_id:req.user_id}, { $set: {
     fullName,
     telephone,
     job,
     gender,
     birthday,
-    mail,
 		} },{new: true})
 		.exec()
 		.then(data=>{
@@ -267,6 +299,94 @@ router.get('/getProfile',verifyToken,(req,res)=>{
         }).catch((err)=>{
             res.json(err);
         })
+});
+
+router.get('/purchase_v1',verifyToken,(req,res)=>{
+  Users.findOne({_id:req.user_id},(err,data)=>{
+    if(data){
+      let Count =(parseInt(data.fortuneCount)+3);
+        Users.findByIdAndUpdate({_id:req.user_id},{$set: { fortuneCount: Count }})
+            .then((data)=>{
+                res.json(data);
+            }).catch((err)=>{
+                res.json(err);
+            })
+    }
+  });
+});
+
+router.get('/purchase_v2',verifyToken,(req,res)=>{
+  Users.findOne({_id:req.user_id},(err,data)=>{
+    if(data){
+      let Count =(parseInt(data.fortuneCount)+7);
+        Users.findByIdAndUpdate({_id:req.user_id},{$set: { fortuneCount: Count }})
+            .then((data)=>{
+                res.json(data);
+            }).catch((err)=>{
+                res.json(err);
+            })
+    }
+  });
+});
+
+router.get('/purchase_v3',verifyToken,(req,res)=>{
+  Users.findOne({_id:req.user_id},(err,data)=>{
+    if(data){
+      let Count =(parseInt(data.fortuneCount)+12);
+        Users.findByIdAndUpdate({_id:req.user_id},{$set: { fortuneCount: Count }})
+            .then((data)=>{
+                res.json(data);
+            }).catch((err)=>{
+                res.json(err);
+            })
+    }
+  });
+});
+
+router.post('/promotionCode',verifyToken,(req,res)=>{
+	const {promotionCode} =req.body;
+	Promotion.findOne({promotionCode},(err,data)=>{
+    if(data){
+      let count =(parseInt(data.promotionCount)-1);
+      const promotionId =data._id;
+      const fortuneRight = data.promotionRights;
+      if(data.promotionCount>1){
+          Users.findOne({_id:req.user_id},(err,dataUser)=>{
+            if(dataUser){
+              const array =dataUser.promotionCode;
+              const status =array.includes(promotionCode);
+              const newFortuneCount = (parseInt(dataUser.fortuneCount)+parseInt(fortuneRight));
+              if(status==false){
+                Users.findByIdAndUpdate({_id:req.user_id},{ $push: {promotionCode:promotionCode} , $set: { fortuneCount: newFortuneCount } },{new: true})
+                  .exec()
+                  .then(data2=>{
+                    Promotion.findByIdAndUpdate({_id:promotionId}, { $set: {promotionCount:count} },{new: true})
+                    .then(data3 =>{
+                      res.json({
+                        status: true,
+                        message: 'Promosyon kodu kullanımı başarılı.'});
+                    })
+                  }).catch(err =>{
+                  res.json(err);
+                })
+              }else{
+                res.json({
+                  status: false, 
+                  message: 'Girdiğiniz promosyon kodunu daha önce kullandınız.'});
+              }
+            }
+        });
+      }else if(data.promotionCount<=0){
+        res.json({
+          status: false,
+          message: 'Girdiğiniz promosyon kodu tükenmiştir.'}); 
+      }
+    }else {
+      res.json({
+        status: false,
+        message: 'Girdiğiniz promosyon kodu hatalı.'});
+    };
+  })
 });
 
 module.exports = router;

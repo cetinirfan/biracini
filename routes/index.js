@@ -2,6 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 router.get('/', (req, res, next) => {
-    res.render('index', { title: 'e kuaforum API Server' });
+    res.render('index', { title: 'Bira Cini API Server' });
   });
 module.exports = router;

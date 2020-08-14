@@ -12,6 +12,10 @@ const Fortune = new Schema({
         type:Number,
         default:0,
     },
+    fortuneView:{
+        type:Number,
+        default:0,
+    },
     gender:{
         type:String
     },
@@ -21,22 +25,30 @@ const Fortune = new Schema({
     fortunePhoto:{
         type:String,
     },
+    fortuneAnswerTitle:{
+        type:String,
+    },
     fortuneAnswer:{
         type:String,
     },
     fortuneComment:{
         type:String,
-    },
+    }, 
     fortuneRating:{
         type:Number,
-        default:0,
+        default:-1,
+    },
+    userFullName:{
+        type:String,
+    },
+    userTelephone:{
+        type:String,
     },
     fortuneUser:{
         type: mongoose.Types.ObjectId
     },
     fortuneCreated:{
         type:Date,
-        default:Date.now()
     }
 });
 

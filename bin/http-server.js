@@ -2,7 +2,7 @@ const app = require('../app');
 const debug = require('debug')('backend:server');
 const http = require('http');
 
-const port = normalizePort(process.env.PORT || '8080');
+const port = normalizePort(process.env.PORT || '8000');
 app.set('port', port);
 
 const server = http.createServer(app);
@@ -44,7 +44,7 @@ function onError(error) {
       process.exit(1);
       break;
     default:
-      throw error;
+      throw error; 
   }
 }
 
